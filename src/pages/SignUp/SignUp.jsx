@@ -1,7 +1,59 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { FcGoogle } from 'react-icons/fc'
+import useAuth from '../../hooks/useAuth'
+import axios from 'axios'
+import toast from 'react-hot-toast'
+import { TbFidgetSpinner } from "react-icons/tb";
 
 const SignUp = () => {
+  const navigate = useNavigate()
+  const { createUser, signInWithGoogle, updateUserProfile, loading, setLoading } = useAuth()
+  const handleSubmit = async e => {
+    e.preventDefault()
+    const form = e.target
+    const name = form.name.value
+    const email = form.email.value
+    const password = form.password.value
+    const image = form.image.files[0]
+    // console.log(name,email,password);
+    console.log(image);
+    const formData = new FormData()
+    formData.append('image', image)
+
+    try {
+      setLoading(true)
+      // 1. upload image and get url
+      const { data } = await axios.post(`https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_IMGBB_API_KEY}`,
+        formData
+      )
+      // console.log(data)
+      console.log(data.data.display_url)
+
+      // 2. user Registration
+      const result = await createUser(email, password)
+      console.log(result)
+
+      // 3. update Profile (save user name and photo)
+      await updateUserProfile(name, data.data.display_url)
+      navigate('/')
+      toast.success('Sign up Successful')
+    } catch (error) {
+      console.log(error)
+      toast.error(error.message)
+    }
+  }
+
+  // handle google signIn
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle()
+      navigate('/')
+    } catch (error) {
+      console.log(error)
+      toast.error(error.message)
+    }
+  }
+
   return (
     <div className='flex justify-center items-center min-h-screen'>
       <div className='flex flex-col max-w-md p-6 rounded-md sm:p-10 bg-gray-100 text-gray-900'>
@@ -12,6 +64,7 @@ const SignUp = () => {
         <form
           noValidate=''
           action=''
+          onSubmit={handleSubmit}
           className='space-y-6 ng-untouched ng-pristine ng-valid'
         >
           <div className='space-y-4'>
@@ -77,7 +130,7 @@ const SignUp = () => {
               type='submit'
               className='bg-rose-500 w-full rounded-md py-3 text-white'
             >
-              Continue
+              {loading ? <TbFidgetSpinner className='animate-spin mx-auto' /> : 'Continue'}
             </button>
           </div>
         </form>
@@ -88,11 +141,11 @@ const SignUp = () => {
           </p>
           <div className='flex-1 h-px sm:w-16 dark:bg-gray-700'></div>
         </div>
-        <div className='flex justify-center items-center space-x-2 border m-3 p-2 border-gray-300 border-rounded cursor-pointer'>
+        <button disabled={loading} onClick={handleGoogleSignIn} className='flex justify-center items-center space-x-2 border m-3 p-2 border-gray-300 border-rounded disabled:cursor-not-allowed cursor-pointer'>
           <FcGoogle size={32} />
 
           <p>Continue with Google</p>
-        </div>
+        </button>
         <p className='px-6 text-sm text-center text-gray-400'>
           Already have an account?{' '}
           <Link
