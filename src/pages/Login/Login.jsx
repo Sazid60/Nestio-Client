@@ -1,6 +1,6 @@
 
 import { FcGoogle } from 'react-icons/fc'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import toast from 'react-hot-toast'
 import { TbFidgetSpinner } from "react-icons/tb";
@@ -9,6 +9,8 @@ import { useState } from 'react';
 
 const Login = () => {
   const navigate = useNavigate()
+  const location = useLocation()
+  const from = location?.state || '/'
   const { signIn, signInWithGoogle, resetPassword, loading, setLoading } = useAuth()
   const [email, setEmail] = useState('')
 
@@ -22,7 +24,7 @@ const Login = () => {
       setLoading(true)
       // 1. upload image and get url
       await signIn(email, password)
-      navigate('/')
+      navigate(from)
       toast.success('Sign in Successful')
     } catch (error) {
       console.log(error)
@@ -47,7 +49,7 @@ const Login = () => {
   const handleGoogleSignIn = async () => {
     try {
       await signInWithGoogle()
-      navigate('/')
+      navigate(from)
     } catch (error) {
       console.log(error)
       toast.error(error.message)
